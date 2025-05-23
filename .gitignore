@@ -1,0 +1,17 @@
+# Ignore server binary
+server
+
+# Ignore Windows executables
+*.exe
+
+# Ignore build artifacts
+*.out
+*.o
+*.a
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+.DS_Store
+*~

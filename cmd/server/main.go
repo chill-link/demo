@@ -103,22 +103,25 @@ func fetchBaidu(query string) ([]SearchResult, error) {
 }
 
 func fetchHTML(url string) (string, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("User-Agent", "Mozilla/5.0")
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
+    client := &http.Client{}
+    req, err := http.NewRequest("GET", url, nil)
+    if err != nil {
+        return "", err
+    }
+    req.Header.Set("User-Agent", "Mozilla/5.0")
+    resp, err := client.Do(req)
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode != http.StatusOK {
+        return "", fmt.Errorf("unexpected status: %s", resp.Status)
+    }
+    data, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return "", err
+    }
+    return string(data), nil
 }
 
 func parseResults(body string, pattern string) ([]SearchResult, error) {

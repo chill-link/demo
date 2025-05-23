@@ -76,30 +76,30 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func fetchGoogle(query string) ([]SearchResult, error) {
-	url := fmt.Sprintf(googleURL, query)
-	body, err := fetchHTML(url)
-	if err != nil {
-		return nil, err
-	}
-	return parseResults(body, `href="/url\?q=([^&]+)&amp;[^"]*"[^>]*>(?:<h3[^>]*>)?(.*?)(?:</h3>)?</a>`)
+    url := "https://www.google.com/search?q=" + url.QueryEscape(query)
+    body, err := fetchHTML(url)
+    if err != nil {
+        return nil, err
+    }
+    return parseResults(body, `href="/url\?q=([^&]+)&amp;[^"]*"[^>]*>(?:<h3[^>]*>)?(.*?)(?:</h3>)?</a>`)
 }
 
 func fetchBing(query string) ([]SearchResult, error) {
-	url := fmt.Sprintf(bingURL, query)
-	body, err := fetchHTML(url)
-	if err != nil {
-		return nil, err
-	}
-	return parseResults(body, `<li class="b_algo"><h2><a href="([^"]+)"[^>]*>(.*?)</a>`)
+    url := "https://www.bing.com/search?q=" + url.QueryEscape(query)
+    body, err := fetchHTML(url)
+    if err != nil {
+        return nil, err
+    }
+    return parseResults(body, `<li class="b_algo"><h2><a href="([^"]+)"[^>]*>(.*?)</a>`)
 }
 
 func fetchBaidu(query string) ([]SearchResult, error) {
-	url := fmt.Sprintf(baiduURL, query)
-	body, err := fetchHTML(url)
-	if err != nil {
-		return nil, err
-	}
-	return parseResults(body, `<h3 class="t"><a href="([^"]+)"[^>]*>(.*?)</a>`)
+    url := "https://www.baidu.com/s?wd=" + url.QueryEscape(query)
+    body, err := fetchHTML(url)
+    if err != nil {
+        return nil, err
+    }
+    return parseResults(body, `<h3 class="t"><a href="([^"]+)"[^>]*>(.*?)</a>`)
 }
 
 func fetchHTML(url string) (string, error) {

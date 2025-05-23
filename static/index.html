@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Aggregated Search</title>
+    <style>
+        #results {
+            display: flex;
+            gap: 20px;
+        }
+        #results > div {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>Aggregated Search</h1>
+    <form id="searchForm">
+        <input type="text" id="query" placeholder="Search..." />
+        <button type="submit">Search</button>
+    </form>
+    <div id="results">
+        <div>
+            <h2>Google</h2>
+            <div id="googleResults"></div>
+        </div>
+        <div>
+            <h2>Bing</h2>
+            <div id="bingResults"></div>
+        </div>
+        <div>
+            <h2>Baidu</h2>
+            <div id="baiduResults"></div>
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>

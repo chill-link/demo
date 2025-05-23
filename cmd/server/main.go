@@ -3,7 +3,7 @@ package main
 import (
     "encoding/json"
     "fmt"
-    "io/ioutil"
+    "io"
     "log"
     "net/http"
     "regexp"
@@ -108,7 +108,7 @@ func fetchHTML(url string) (string, error) {
         return "", err
     }
     defer resp.Body.Close()
-    data, err := ioutil.ReadAll(resp.Body)
+    data, err := io.ReadAll(resp.Body)
     if err != nil {
         return "", err
     }

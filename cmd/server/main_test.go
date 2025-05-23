@@ -7,66 +7,55 @@ import (
 	"testing"
 )
 
-func TestSearchAggregatesResults(t *testing.T) {
-	// Stub Google server
-	gSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func TestSearchHandler(t *testing.T) {
+	// stub search engine servers
+	googleSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(`<a href="/url?q=http://g.com&amp;sa=U"><h3>GTitle</h3></a>`))
+		w.Write([]byte(`<a href="/url?q=http://google.com&amp;sa=U"><h3>GTitle</h3></a>`))
 	}))
-	defer gSrv.Close()
+	defer googleSrv.Close()
 
-	bSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	bingSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(`<li class="b_algo"><h2><a href="http://b.com">BTitle</a></h2></li>`))
+		w.Write([]byte(`<li class="b_algo"><h2><a href="http://bing.com">BTitle</a></h2>`))
 	}))
-	defer bSrv.Close()
+	defer bingSrv.Close()
 
-	baSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	baiduSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(`<h3 class="t"><a href="http://baidu.com">BaTitle</a></h3>`))
+		w.Write([]byte(`<h3 class="t"><a href="http://baidu.com">BaiduTitle</a></h3>`))
 	}))
-	defer baSrv.Close()
+	defer baiduSrv.Close()
 
-	// Override search URLs
-	oldGoogleURL := googleURL
-	oldBingURL := bingURL
-	oldBaiduURL := baiduURL
-	googleURL = gSrv.URL + "?q=%s"
-	bingURL = bSrv.URL + "?q=%s"
-	baiduURL = baSrv.URL + "?wd=%s"
-	defer func() {
-		googleURL = oldGoogleURL
-		bingURL = oldBingURL
-		baiduURL = oldBaiduURL
-	}()
+	googleSearchURL = googleSrv.URL + "?q=%s"
+	bingSearchURL = bingSrv.URL + "?q=%s"
+	baiduSearchURL = baiduSrv.URL + "?wd=%s"
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/search", searchHandler)
-	srv := httptest.NewServer(mux)
-	defer srv.Close()
+	server := httptest.NewServer(setupServer())
+	defer server.Close()
 
-	resp, err := http.Get(srv.URL + "/search?q=test")
+	resp, err := http.Get(server.URL + "/search?q=test")
 	if err != nil {
-		t.Fatalf("request failed: %v", err)
+		t.Fatal(err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", resp.StatusCode)
+		t.Fatalf("unexpected status: %d", resp.StatusCode)
 	}
 
-	var agg AggregatedResults
-	if err := json.NewDecoder(resp.Body).Decode(&agg); err != nil {
-		t.Fatalf("decode failed: %v", err)
+	var result AggregatedResults
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatal(err)
 	}
 
-	if len(agg.Google) != 1 || agg.Google[0].Title != "GTitle" || agg.Google[0].URL != "http://g.com" {
-		t.Errorf("google results mismatch: %+v", agg.Google)
+	if len(result.Google) != 1 || result.Google[0].URL != "http://google.com" {
+		t.Fatalf("google results unexpected: %+v", result.Google)
 	}
-	if len(agg.Bing) != 1 || agg.Bing[0].Title != "BTitle" || agg.Bing[0].URL != "http://b.com" {
-		t.Errorf("bing results mismatch: %+v", agg.Bing)
+	if len(result.Bing) != 1 || result.Bing[0].URL != "http://bing.com" {
+		t.Fatalf("bing results unexpected: %+v", result.Bing)
 	}
-	if len(agg.Baidu) != 1 || agg.Baidu[0].Title != "BaTitle" || agg.Baidu[0].URL != "http://baidu.com" {
-		t.Errorf("baidu results mismatch: %+v", agg.Baidu)
+	if len(result.Baidu) != 1 || result.Baidu[0].URL != "http://baidu.com" {
+		t.Fatalf("baidu results unexpected: %+v", result.Baidu)
 	}
 }

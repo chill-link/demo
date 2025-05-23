@@ -1,5 +1,6 @@
 # Aggregated Search Demo
 
+## Run the Go server to start.
 This demo aggregates search results from several engines.
 
 ## Prerequisites

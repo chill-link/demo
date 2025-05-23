@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	googleURL = "https://www.google.com/search?q=%s"
-	bingURL   = "https://www.bing.com/search?q=%s"
-	baiduURL  = "https://www.baidu.com/s?wd=%s"
+	googleSearchURL = "https://www.google.com/search?q=%s"
+	bingSearchURL   = "https://www.bing.com/search?q=%s"
+	baiduSearchURL  = "https://www.baidu.com/s?wd=%s"
+	httpClient      = &http.Client{}
 )
 
 type SearchResult struct {
@@ -28,14 +29,18 @@ type AggregatedResults struct {
 }
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Listening on :8080")
+	log.Fatal(http.ListenAndServe(":8080", setupServer()))
+}
+
+func setupServer() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/index.html")
 	})
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.HandleFunc("/search", searchHandler)
-
-	fmt.Println("Listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.HandleFunc("/search", searchHandler)
+	return mux
 }
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
@@ -76,53 +81,48 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func fetchGoogle(query string) ([]SearchResult, error) {
-    url := "https://www.google.com/search?q=" + url.QueryEscape(query)
-    body, err := fetchHTML(url)
-    if err != nil {
-        return nil, err
-    }
-    return parseResults(body, `href="/url\?q=([^&]+)&amp;[^"]*"[^>]*>(?:<h3[^>]*>)?(.*?)(?:</h3>)?</a>`)
+	url := fmt.Sprintf(googleSearchURL, query)
+	body, err := fetchHTML(url)
+	if err != nil {
+		return nil, err
+	}
+	return parseResults(body, `href="/url\?q=([^&]+)&amp;[^"]*"[^>]*>(?:<h3[^>]*>)?(.*?)(?:</h3>)?</a>`)
 }
 
 func fetchBing(query string) ([]SearchResult, error) {
-    url := "https://www.bing.com/search?q=" + url.QueryEscape(query)
-    body, err := fetchHTML(url)
-    if err != nil {
-        return nil, err
-    }
-    return parseResults(body, `<li class="b_algo"><h2><a href="([^"]+)"[^>]*>(.*?)</a>`)
+	url := fmt.Sprintf(bingSearchURL, query)
+	body, err := fetchHTML(url)
+	if err != nil {
+		return nil, err
+	}
+	return parseResults(body, `<li class="b_algo"><h2><a href="([^"]+)"[^>]*>(.*?)</a>`)
 }
 
 func fetchBaidu(query string) ([]SearchResult, error) {
-    url := "https://www.baidu.com/s?wd=" + url.QueryEscape(query)
-    body, err := fetchHTML(url)
-    if err != nil {
-        return nil, err
-    }
-    return parseResults(body, `<h3 class="t"><a href="([^"]+)"[^>]*>(.*?)</a>`)
+	url := fmt.Sprintf(baiduSearchURL, query)
+	body, err := fetchHTML(url)
+	if err != nil {
+		return nil, err
+	}
+	return parseResults(body, `<h3 class="t"><a href="([^"]+)"[^>]*>(.*?)</a>`)
 }
 
 func fetchHTML(url string) (string, error) {
-    client := &http.Client{}
-    req, err := http.NewRequest("GET", url, nil)
-    if err != nil {
-        return "", err
-    }
-    req.Header.Set("User-Agent", "Mozilla/5.0")
-    resp, err := client.Do(req)
-    if err != nil {
-        return "", err
-    }
-    defer resp.Body.Close()
-
-    if resp.StatusCode != http.StatusOK {
-        return "", fmt.Errorf("unexpected status: %s", resp.Status)
-    }
-    data, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        return "", err
-    }
-    return string(data), nil
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func parseResults(body string, pattern string) ([]SearchResult, error) {

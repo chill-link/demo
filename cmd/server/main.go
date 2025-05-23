@@ -6,6 +6,7 @@ import (
     "io/ioutil"
     "log"
     "net/http"
+    "net/url"
     "regexp"
     "sync"
 )
@@ -70,7 +71,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func fetchGoogle(query string) ([]SearchResult, error) {
-    url := fmt.Sprintf("https://www.google.com/search?q=%s", query)
+    url := "https://www.google.com/search?q=" + url.QueryEscape(query)
     body, err := fetchHTML(url)
     if err != nil {
         return nil, err
@@ -79,7 +80,7 @@ func fetchGoogle(query string) ([]SearchResult, error) {
 }
 
 func fetchBing(query string) ([]SearchResult, error) {
-    url := fmt.Sprintf("https://www.bing.com/search?q=%s", query)
+    url := "https://www.bing.com/search?q=" + url.QueryEscape(query)
     body, err := fetchHTML(url)
     if err != nil {
         return nil, err
@@ -88,7 +89,7 @@ func fetchBing(query string) ([]SearchResult, error) {
 }
 
 func fetchBaidu(query string) ([]SearchResult, error) {
-    url := fmt.Sprintf("https://www.baidu.com/s?wd=%s", query)
+    url := "https://www.baidu.com/s?wd=" + url.QueryEscape(query)
     body, err := fetchHTML(url)
     if err != nil {
         return nil, err

@@ -44,6 +44,10 @@ func setupServer() http.Handler {
 }
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
+	// Allow cross-origin requests so the API can be called from the
+	// static page when it is served from a different origin.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	query := r.URL.Query().Get("q")
 	if query == "" {
 		http.Error(w, "missing query", http.StatusBadRequest)
